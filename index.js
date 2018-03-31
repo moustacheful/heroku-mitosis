@@ -1,15 +1,20 @@
+#!/usr/bin/env node
+
+const _ = require('lodash');
+const path = require('path');
 const Heroku = require('heroku-client');
 const Promise = require('bluebird');
-const _ = require('lodash');
-const HerokuApp = require('./lib/heroku-app');
 const args = require('yargs').argv;
+const HerokuApp = require('./lib/heroku-app');
 
 const action = args._[0];
-const config = require('./app-config.json');
+
+const configPath = path.resolve(process.cwd(), args.config || '.mitosis.json');
+
+const config = require(configPath);
+
 const options = config.__mitosis;
 delete options.__mitosis;
-
-process.exit(1);
 
 const missingArgs = _.difference(['apiKey', 'name'], Object.keys(args));
 if (missingArgs.length) {
