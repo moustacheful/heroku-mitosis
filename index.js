@@ -28,7 +28,8 @@ const checkApp = id => {
 	return h.get(`/app-setups/${id}`).then(res => {
 		if (res.status === 'succeeded') return;
 		console.log(res);
-		return checkApp(id);
+
+		return Promise.delay(10000).then(() => checkApp(id));
 	});
 };
 
