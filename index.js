@@ -28,6 +28,7 @@ const checkApp((id) => {
 	return herokuClient.get(`/app-setups/${id}`)
 		.then(res => {
 			if (res.status === 'succeeded') return;
+			console.log(res)
 			return checkApp(id)
 	});
 })
