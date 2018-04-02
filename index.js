@@ -24,6 +24,14 @@ if (missingArgs.length) {
 
 const h = new Heroku({ token: args.apiKey });
 
+const checkApp((id) => {
+	return herokuClient.get(`/app-setups/${id}`)
+		.then(res => {
+			if (res.status === 'succeeded') return;
+			return checkApp(id)
+	});
+})
+
 async function appSetup() {
 	await h
 		.post('/app-setups', {
@@ -32,7 +40,7 @@ async function appSetup() {
 				source_blob: { url: args.tarball },
 			},
 		})
-		.then(console.log)
+		.then(checkApp)
 		.catch(console.error);
 }
 
