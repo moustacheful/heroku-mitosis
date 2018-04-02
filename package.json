@@ -1,7 +1,7 @@
 {
   "name": "heroku-mitosis",
   "repository": "github:moustacheful/heroku-mitosis",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "description": "A package to make copies of heroku apps for reviewing purposes",
   "main": "index.js",
   "scripts": {
