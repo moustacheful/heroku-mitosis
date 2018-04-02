@@ -40,7 +40,7 @@ async function appSetup() {
 				source_blob: { url: args.tarball },
 			},
 		})
-		.then(checkApp)
+		.then(res => checkApp(res.id))
 		.catch(console.error);
 }
 
