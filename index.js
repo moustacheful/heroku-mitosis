@@ -24,6 +24,18 @@ if (missingArgs.length) {
 
 const h = new Heroku({ token: args.apiKey });
 
+async function appSetup() {
+	await h
+		.post('/app-setups', {
+			body: {
+				...config,
+				source_blob: { url: args.tarball },
+			},
+		})
+		.then(console.log)
+		.catch(console.error);
+}
+
 async function createReviewApp() {
 	console.log('Looking for seed app...');
 	const seedApp = await h.get(`/apps/${options.seed}`);
@@ -77,6 +89,10 @@ async function scale() {
 
 let fn;
 switch (action) {
+	case 'appSetup':
+		fn = appSetup;
+		break;
+
 	case 'create':
 		fn = createReviewApp;
 		break;
