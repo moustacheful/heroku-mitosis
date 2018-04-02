@@ -24,14 +24,13 @@ if (missingArgs.length) {
 
 const h = new Heroku({ token: args.apiKey });
 
-const checkApp((id) => {
-	return herokuClient.get(`/app-setups/${id}`)
-		.then(res => {
-			if (res.status === 'succeeded') return;
-			console.log(res)
-			return checkApp(id)
+const checkApp = id => {
+	return herokuClient.get(`/app-setups/${id}`).then(res => {
+		if (res.status === 'succeeded') return;
+		console.log(res);
+		return checkApp(id);
 	});
-})
+};
 
 async function appSetup() {
 	await h
