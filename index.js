@@ -1,126 +1,123 @@
 #!/usr/bin/env node
-
 const _ = require('lodash');
 const path = require('path');
+const https = require('https');
+const args = require('yargs').argv;
 const Heroku = require('heroku-client');
 const Promise = require('bluebird');
-const args = require('yargs').argv;
-const HerokuApp = require('./lib/heroku-app');
 
-const action = args._[0];
+const checkArgs = (required) => {
+  const missing = _.difference(required, Object.keys(args));
+  if (!missing.length) return true;
 
-const configPath = path.resolve(process.cwd(), args.config || '.mitosis.json');
-
-const config = require(configPath);
-
-const options = config.__mitosis;
-delete options.__mitosis;
-
-const missingArgs = _.difference(['apiKey', 'name'], Object.keys(args));
-if (missingArgs.length) {
-	console.error('Missing required arguments: ' + missingArgs.join(', '));
-	process.exit(1);
-}
-
-const h = new Heroku({ token: args.apiKey });
-
-const checkApp = id => {
-	return h.get(`/app-setups/${id}`).then(res => {
-		if (res.status === 'succeeded') return;
-		console.log(res);
-
-		return Promise.delay(10000).then(() => checkApp(id));
-	});
+  throw new Error(`Missing required arguments: ${missing.join(', ')}`);
 };
 
-async function appSetup() {
-	await h
-		.post('/app-setups', {
-			body: {
-				...config,
-				source_blob: { url: args.tarball },
-			},
-		})
-		.then(res => checkApp(res.id))
-		.catch(console.error);
+const heroku = new Heroku({ token: args.apiKey });
+const CHECK_DELAY = 10000;
+const action = args._[0];
+const configPath = path.resolve(process.cwd(), 'app.json');
+
+try {
+  const config = require(configPath);
+} catch (err) {
+  throw new Error(
+    'An app.json must be present and valid to be able to setup apps with heroku'
+  );
 }
 
-async function createReviewApp() {
-	console.log('Looking for seed app...');
-	const seedApp = await h.get(`/apps/${options.seed}`);
-	const configVars = await h.get(`/apps/${options.seed}/config-vars`);
+const Mitosis = {
+  logStream(url) {
+    return new Promise((resolve, reject) => {
+      https
+        .get(url, (res) => {
+          res.on('data', (chunk) => {
+            console.log(chunk.toString());
+          });
 
-	const newAppName = args.name;
+          res.on('end', (response) => resolve(true));
+        })
+        .on('error', (error) => {
+          console.error(error);
+          reject(error);
+        });
+    });
+  },
 
-	const forkedExists = await h
-		.get(`/apps/${newAppName}`)
-		.then(() => {
-			console.log('Application', newAppName, 'already exists, bailing!');
-			return true;
-		})
-		.catch(err => false);
+  updateApp(name, tarball) {
+    return heroku
+      .post(`/apps/${name}/builds`, {
+        body: { source_blob: { url: tarball } },
+      })
+      .then((build) => Mitosis.logStream(build.output_stream_url));
+  },
 
-	if (forkedExists) {
-		process.exit(0);
-	}
+  async createApp(name, tarball) {
+    console.log(`Setting up app: ${name}`);
 
-	console.log(
-		'Creating new app:',
-		newAppName,
-		'in region:',
-		seedApp.region.name
-	);
+    const checkApp = (id) => {
+      console.log('Checking app status...');
 
-	const forkedApp = await h.post('/apps', {
-		body: {
-			name: newAppName,
-			region: seedApp.region.id,
-		},
-	});
+      return heroku.get(`/app-setups/${id}`).then((res) => {
+        if (res.status === 'failed') return Promise.reject(res.failure_message);
 
-	const forked = new HerokuApp(forkedApp, h);
-	await forked.updateConfigVars(configVars);
+        if (res.build && res.build.output_stream_url)
+          return Mitosis.logStream(res.build.output_stream_url);
 
-	if (config.addons) await forked.createAddons(config.addons);
-	if (config.buildpacks) await forked.setBuildpacks(config.buildpacks);
-	if (options.config_vars)
-		await forked.setDynamicConfigVars(options.config_vars);
+        return Promise.delay(CHECK_DELAY).then(() => checkApp(id));
+      });
+    };
+
+    return heroku
+      .post('/app-setups', {
+        body: {
+          app: { name },
+          source_blob: { url: tarball },
+        },
+      })
+      .then((res) => checkApp(res.id));
+  },
+};
+
+const actions = {
+  async setup() {
+    checkArgs(['tarball', 'name']);
+
+    const appExists = await heroku
+      .get(`/apps/${args.name}`)
+      .then(() => true)
+      .catch(() => false);
+
+    if (appExists) {
+      await Mitosis.updateApp(args.name, args.tarball);
+      return console.log(`App '${args.name}' updated`);
+    }
+
+    await Mitosis.createApp(args.name, args.tarball);
+    return console.log(`App '${args.name}' created`);
+  },
+
+  destroy() {
+    checkArgs(['name']);
+
+    return heroku.delete(`/apps/${args.name}`);
+  },
+};
+
+if (!(action in actions)) {
+  console.error('Action not recognized, bailing.');
+  process.exit(1);
 }
 
-async function destroyReviewApp() {
-	await h.delete(`/apps/${args.name}`);
-}
+checkArgs(['apiKey']);
 
-async function scale() {
-	const forked = new HerokuApp({ name: args.name }, h);
-	if (config.formation) await forked.setFormation(config.formation);
-}
-
-let fn;
-switch (action) {
-	case 'appSetup':
-		fn = appSetup;
-		break;
-
-	case 'create':
-		fn = createReviewApp;
-		break;
-
-	case 'destroy':
-		fn = destroyReviewApp;
-		break;
-
-	case 'scale':
-		fn = scale;
-		break;
-
-	default:
-		console.error('Action not recognized, bailing.');
-		process.exit(0);
-		break;
-}
-
-fn().catch(err => {
-	console.log(err);
-	process.exit(1);
-});
+actions[action]()
+  .then(() => {
+    console.log(`Action ${action} succeeded`);
+    process.exit(0);
+  })
+  .catch((err) => {
+    console.log(`Action ${action} failed:`);
+    console.log(err);
+    process.exit(1);
+  });
