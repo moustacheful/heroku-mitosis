@@ -32,7 +32,7 @@ const Mitosis = {
       https
         .get(url, (res) => {
           res.on('data', (chunk) => {
-            console.log(chunk.toString());
+            process.stdout.write(chunk.toString());
           });
 
           res.on('end', (response) => resolve(true));
