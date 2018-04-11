@@ -20,6 +20,8 @@ const configPath = path.resolve(process.cwd(), 'app.json');
 
 try {
   const config = require(configPath);
+  const options = config.__mitosis;
+  delete config.__mitosis;
 } catch (err) {
   throw new Error(
     'An app.json must be present and valid to be able to setup apps with heroku'
@@ -68,14 +70,42 @@ const Mitosis = {
       });
     };
 
-    return heroku
+    await heroku
       .post('/app-setups', {
         body: {
           app: { name },
           source_blob: { url: tarball },
         },
       })
-      .then((res) => checkApp(res.id));
+      .then(res => checkApp(res.id));
+
+    if (options.pipeline) {
+      console.log(
+        `Attaching to '${options.pipeline.stage}' on pipeline '${
+          options.pipeline.name
+        }'`
+      );
+      const pipeline = await heroku.get(`pipelines/${options.pipeline.name}`);
+      await heroku.post('/pipeline-couplings', {
+        body: {
+          app: name,
+          pipeline: pipeline.id,
+          stage: options.pipeline.stage,
+        },
+      });
+    }
+
+    if (options.collaborators) {
+      console.log(`Adding ${options.collaborators.length} collaborator(s)`);
+      await Promise.map(options.collaborators, user =>
+        heroku.post(`/apps/${name}/collaborators`, {
+          body: {
+            silent: true,
+            user,
+          },
+        })
+      );
+    }
   },
 };
 
