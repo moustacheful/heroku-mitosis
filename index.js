@@ -17,7 +17,7 @@ const heroku = new Heroku({ token: args.apiKey });
 const CHECK_DELAY = 10000;
 const action = args._[0];
 const configPath = path.resolve(process.cwd(), 'app.json');
-let config, options
+let config, options;
 
 try {
   config = require(configPath);
