@@ -80,33 +80,40 @@ const Mitosis = {
       })
       .then(res => checkApp(res.id));
 
+    if (options.collaborators) {
+      console.log(`Adding ${options.collaborators.length} collaborator(s)`);
+      await Promise.map(options.collaborators, user =>
+        heroku
+          .post(`/apps/${name}/collaborators`, {
+            body: {
+              silent: true,
+              user,
+            },
+          })
+          .catch(err => console.log(err.body.message))
+      );
+    }
+
     if (options.pipeline) {
       console.log(
         `Attaching to '${options.pipeline.stage}' on pipeline '${
           options.pipeline.name
         }'`
       );
-      const pipeline = await heroku.get(`pipelines/${options.pipeline.name}`);
-      await heroku.post('/pipeline-couplings', {
-        body: {
-          app: name,
-          pipeline: pipeline.id,
-          stage: options.pipeline.stage,
-        },
-      });
-    }
+      const pipeline = await heroku.get(`/pipelines/${options.pipeline.name}`);
 
-    if (options.collaborators) {
-      console.log(`Adding ${options.collaborators.length} collaborator(s)`);
-      await Promise.map(options.collaborators, user =>
-        heroku.post(`/apps/${name}/collaborators`, {
+      await heroku
+        .post('/pipeline-couplings', {
           body: {
-            silent: true,
-            user,
+            app: name,
+            pipeline: pipeline.id,
+            stage: options.pipeline.stage,
           },
         })
-      );
+        .catch(err => console.log(err.body.message));
     }
+
+    return true;
   },
 };
 
