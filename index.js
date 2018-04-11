@@ -17,10 +17,11 @@ const heroku = new Heroku({ token: args.apiKey });
 const CHECK_DELAY = 10000;
 const action = args._[0];
 const configPath = path.resolve(process.cwd(), 'app.json');
+let config, options
 
 try {
-  const config = require(configPath);
-  const options = config.__mitosis;
+  config = require(configPath);
+  options = config.__mitosis;
   delete config.__mitosis;
 } catch (err) {
   throw new Error(
