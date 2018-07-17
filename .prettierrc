@@ -4,5 +4,6 @@
   "printWidth": 80,
   "jsxBracketSameLine": false,
   "bracketSpacing": true,
-  "semi": true
+  "semi": true,
+  "arrowParens": "always"
 }

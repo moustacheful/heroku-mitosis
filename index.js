@@ -113,7 +113,25 @@ const Mitosis = {
         .catch(err => console.log(err.body.message));
     }
 
+    if (options.features) {
+      await Mitosis.addFeatures(name, options.features);
+    }
+
     return true;
+  },
+
+  async addFeatures(name, features) {
+    console.log(`Enabling features: ${features}`);
+    return Promise.map(features, feature =>
+      heroku
+        .patch(`/apps/${name}/features/${feature}`, { body: { enabled: true } })
+        .then(() => {
+          console.log(`Added feature: ${feature}`);
+        })
+        .catch(err => {
+          console.log((`Error adding feature '${feature}': `, err.message));
+        })
+    );
   },
 };
 

@@ -1,0 +1,15 @@
+{
+  "folders": [
+    {
+      "path": "."
+    }
+  ],
+  "settings": {
+    "js_prettier": {
+      "debug": false,
+      "auto_format_on_save": true,
+      "allow_inline_formatting": true,
+      "auto_format_on_save_excludes": ["*.json"]
+    }
+  }
+}
