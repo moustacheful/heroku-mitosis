@@ -80,6 +80,10 @@ const Mitosis = {
       })
       .then(res => checkApp(res.id));
 
+    if (options.features) {
+      await Mitosis.addFeatures(name, options.features);
+    }
+
     if (options.collaborators) {
       console.log(`Adding ${options.collaborators.length} collaborator(s)`);
       await Promise.map(options.collaborators, user =>
@@ -111,10 +115,6 @@ const Mitosis = {
           },
         })
         .catch(err => console.log(err.body.message));
-    }
-
-    if (options.features) {
-      await Mitosis.addFeatures(name, options.features);
     }
 
     return true;
