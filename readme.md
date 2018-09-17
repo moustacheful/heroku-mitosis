@@ -25,8 +25,8 @@ Sets up or updates an application
 ##### If the application does not exist
 1. Creates an application based on the `app.json` on the root of the application.
 2. Waits for the app to be fully provisioned, outputting the deployment logs.
-3. Adds collaborators, if any.
-4. Adds the application to a particular pipeline stage.
+3. Adds collaborators, if any. (see: [Custom app.json properties](#custom-app.json-properties))
+4. Adds the application to a particular pipeline stage. (see: [Custom app.json properties](#custom-app.json-properties))
 
 ---
 
@@ -75,4 +75,29 @@ stop_review:
     action: stop
 
 
+```
+
+## Custom app.json properties
+
+There are a few custom properties that are not part of the app.json schema that are under the `__mitosis` namespace. These add automation of commonly used Heroku features. Currently, these are:
+
+```javascript
+  "__mitosis": {
+    "pipeline": {
+      // Adds this app to an already existent pipeline named foo. The Heroku account must have access to it.
+      "name": "foo", 
+      
+      // The stage coupling in the pipeline this app is added to. With review, it behaves as it would with the github integration. Possible values: :"test", "review", "development", "staging", "production"
+      "stage": "review" 
+    },
+    "collaborators": [
+      // You may add additional users that will have access to this app. The users must already exist in Heroku.
+      "foo@company.com",
+      "bar@company.com"
+    ],
+    "features": [
+      // Additional Heroku features can be enabled here. Possible features should be available here: https://devcenter.heroku.com/categories/labs
+      "runtime-dyno-metadata"
+    ]
+  }
 ```
