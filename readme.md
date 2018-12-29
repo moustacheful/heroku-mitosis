@@ -25,8 +25,8 @@ Sets up or updates an application
 ##### If the application does not exist
 1. Creates an application based on the `app.json` on the root of the application.
 2. Waits for the app to be fully provisioned, outputting the deployment logs.
-3. Adds collaborators, if any. (see: [Custom app.json properties](#custom-app.json-properties))
-4. Adds the application to a particular pipeline stage. (see: [Custom app.json properties](#custom-app.json-properties))
+3. Adds collaborators, if any. (see: [Custom app.json properties](#custom-appjson-properties))
+4. Adds the application to a particular pipeline stage. (see: [Custom app.json properties](#custom-appjson-properties))
 
 ---
 
