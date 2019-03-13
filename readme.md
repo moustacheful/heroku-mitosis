@@ -1,28 +1,31 @@
 # Heroku Mitosis
-A package for creating copies of heroku applications through the CLI, using [Heroku's app schema](https://devcenter.heroku.com/articles/app-json-schema) as a base. 
+
+A package for creating copies of heroku applications through the CLI, using [Heroku's app schema](https://devcenter.heroku.com/articles/app-json-schema) as a base.
 
 Designed to be used mainly as a part of your CI pipeline to create review apps.
-
 
 ## Tasks
 
 ### `setup` task
+
 Sets up or updates an application
 
-#### Arguments 
+#### Arguments
 
-| Name       | Description                                                       |
-| ---------- | ----------------------------------------------------------------- |
-| `--tarball`| The public tarball url that contains the application source code. |
-| `--name`   | The application name.                                             |
-| `--apiKey` | Heroku API key                                                    |
+| Name        | Description                                                       |
+| ----------- | ----------------------------------------------------------------- |
+| `--tarball` | The public tarball url that contains the application source code. |
+| `--name`    | The application name.                                             |
+| `--apiKey`  | Heroku API key                                                    |
 
 #### Description
 
 ##### If the application exists
+
 1. Updates the application using the tarball, outputting the deployment logs.
 
 ##### If the application does not exist
+
 1. Creates an application based on the `app.json` on the root of the application.
 2. Waits for the app to be fully provisioned, outputting the deployment logs.
 3. Adds collaborators, if any. (see: [Custom app.json properties](#custom-appjson-properties))
@@ -31,23 +34,22 @@ Sets up or updates an application
 ---
 
 ### `destroy` task
+
 Destroys an application by its name
 
-#### Arguments 
+#### Arguments
 
 | Name       | Description           |
 | ---------- | --------------------- |
 | `--name`   | The application name. |
 | `--apiKey` | Heroku API key        |
 
-
 ## Example - GitLab CI
 
 In here we use some of the readily available CI variables: `CI_BUILD_REF_SLUG`, `CI_BUILD_REF_NAME`, plus some user defined
- variables: `GITLAB_TOKEN` and `HEROKU_API_KEY`. More [here](https://docs.gitlab.com/ee/ci/review_apps/).
+variables: `GITLAB_TOKEN` and `HEROKU_API_KEY`. More [here](https://docs.gitlab.com/ee/ci/review_apps/).
 
- This will create an app with the name of the branch as the application name. Using a prefix would be recommended. Keep in mind Heroku limits the maximum amount of characters on the application name (to 32, apparently), and this is not handled by this package.
-
+This will create an app with the name of the branch as the application name. Using a prefix would be recommended. Keep in mind Heroku limits the maximum amount of characters on the application name (to 32, apparently), and this is not handled by this package.
 
 ```yaml
 review:
@@ -73,8 +75,6 @@ stop_review:
   environment:
     name: review/$CI_BUILD_REF_NAME
     action: stop
-
-
 ```
 
 ## Custom app.json properties
@@ -85,10 +85,10 @@ There are a few custom properties that are not part of the app.json schema that 
   "__mitosis": {
     "pipeline": {
       // Adds this app to an already existent pipeline named foo. The Heroku account must have access to it.
-      "name": "foo", 
-      
+      "name": "foo",
+
       // The stage coupling in the pipeline this app is added to. With review, it behaves as it would with the github integration. Possible values: :"test", "review", "development", "staging", "production"
-      "stage": "review" 
+      "stage": "review"
     },
     "collaborators": [
       // You may add additional users that will have access to this app. The users must already exist in Heroku.
@@ -101,3 +101,7 @@ There are a few custom properties that are not part of the app.json schema that 
     ]
   }
 ```
+
+##### Notes
+
+Remember to clean up your unused environments, be a good sport and don't abuse heroku's free resources!
